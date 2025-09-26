@@ -23,6 +23,7 @@ function App() {
 
   const [errors, setErrors] = useState({})
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [photographPreview, setPhotographPreview] = useState(null)
 
   const handleInputChange = (field, value) => {
@@ -97,13 +98,41 @@ function App() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const encode = (data) => {
+    return Object.keys(data)
+      .map(key => encodeURIComponent(key) + "=" + encodeURIComponent(data[key]))
+      .join("&")
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
     
     if (validateForm()) {
-      setIsSubmitted(true)
-      // Here you would typically send the data to a server
-      console.log('Form submitted:', formData)
+      setIsSubmitting(true)
+      
+      try {
+        // Prepare form data for Netlify Forms
+        const submitData = {
+          "form-name": "trustee-form",
+          ...formData
+        }
+
+        // Remove file from data for URL encoding
+        const { photograph, ...dataToSubmit } = submitData
+
+        await fetch("/", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: encode(dataToSubmit)
+        })
+
+        setIsSubmitted(true)
+      } catch (error) {
+        console.error('Form submission error:', error)
+        alert('There was an error submitting the form. Please try again.')
+      } finally {
+        setIsSubmitting(false)
+      }
     }
   }
 
@@ -157,7 +186,26 @@ function App() {
           </CardHeader>
           
           <CardContent className="p-8">
+            {/* Hidden form for Netlify Forms detection */}
+            <form name="trustee-form" netlify netlify-honeypot="bot-field" hidden>
+              <input type="text" name="firstName" />
+              <input type="text" name="initials" />
+              <input type="text" name="lastName" />
+              <input type="tel" name="mobileNumber" />
+              <input type="tel" name="alternateMobileNumber" />
+              <input type="email" name="emailAddress" />
+              <textarea name="officeAddress"></textarea>
+              <textarea name="residenceAddress"></textarea>
+            </form>
+
             <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Hidden fields for Netlify */}
+              <input type="hidden" name="form-name" value="trustee-form" />
+              <p hidden>
+                <label>
+                  Don't fill this out: <input name="bot-field" />
+                </label>
+              </p>
               
               {/* Personal Information Section */}
               <div className="space-y-6">
@@ -173,6 +221,7 @@ function App() {
                     </Label>
                     <Input
                       id="firstName"
+                      name="firstName"
                       type="text"
                       value={formData.firstName}
                       onChange={(e) => handleInputChange('firstName', e.target.value)}
@@ -191,6 +240,7 @@ function App() {
                     <Label htmlFor="initials" className="text-sm font-medium">Initials</Label>
                     <Input
                       id="initials"
+                      name="initials"
                       type="text"
                       value={formData.initials}
                       onChange={(e) => handleInputChange('initials', e.target.value)}
@@ -210,6 +260,7 @@ function App() {
                   <Label htmlFor="lastName" className="text-sm font-medium">Last Name</Label>
                   <Input
                     id="lastName"
+                    name="lastName"
                     type="text"
                     value={formData.lastName}
                     onChange={(e) => handleInputChange('lastName', e.target.value)}
@@ -234,6 +285,7 @@ function App() {
                     </Label>
                     <Input
                       id="mobileNumber"
+                      name="mobileNumber"
                       type="tel"
                       value={formData.mobileNumber}
                       onChange={(e) => handleInputChange('mobileNumber', e.target.value)}
@@ -254,6 +306,7 @@ function App() {
                     </Label>
                     <Input
                       id="alternateMobileNumber"
+                      name="alternateMobileNumber"
                       type="tel"
                       value={formData.alternateMobileNumber}
                       onChange={(e) => handleInputChange('alternateMobileNumber', e.target.value)}
@@ -277,6 +330,7 @@ function App() {
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       id="emailAddress"
+                      name="emailAddress"
                       type="email"
                       value={formData.emailAddress}
                       onChange={(e) => handleInputChange('emailAddress', e.target.value)}
@@ -307,6 +361,7 @@ function App() {
                     <Label htmlFor="officeAddress" className="text-sm font-medium">Office Address</Label>
                     <Textarea
                       id="officeAddress"
+                      name="officeAddress"
                       value={formData.officeAddress}
                       onChange={(e) => handleInputChange('officeAddress', e.target.value)}
                       rows={4}
@@ -318,6 +373,7 @@ function App() {
                     <Label htmlFor="residenceAddress" className="text-sm font-medium">Residence Address</Label>
                     <Textarea
                       id="residenceAddress"
+                      name="residenceAddress"
                       value={formData.residenceAddress}
                       onChange={(e) => handleInputChange('residenceAddress', e.target.value)}
                       rows={4}
@@ -379,8 +435,12 @@ function App() {
 
               {/* Submit Button */}
               <div className="pt-6">
-                <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105">
-                  Submit Trustee Information
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit Trustee Information'}
                 </Button>
               </div>
             </form>
