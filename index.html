@@ -9,5 +9,17 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+<!-- Hidden form for Netlify detection -->
+<form name="trustee-form" netlify netlify-honeypot="bot-field" hidden>
+  <input type="text" name="firstName" />
+  <input type="text" name="initials" />
+  <input type="text" name="lastName" />
+  <input type="text" name="mobileNumber" />
+  <input type="text" name="alternateMobileNumber" />
+  <input type="email" name="emailAddress" />
+  <textarea name="officeAddress"></textarea>
+  <textarea name="residenceAddress"></textarea>
+  <input type="file" name="photograph" />
+</form>
   </body>
 </html>
